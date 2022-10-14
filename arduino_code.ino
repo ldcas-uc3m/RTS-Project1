@@ -10,6 +10,7 @@
 // --------------------------------------
 #define SLAVE_ADDR 0x8
 #define MESSAGE_SIZE 8
+#define MAX_MILIS 0xFFFFFFFF  // max number for the milis() clock function
 
 // --------------------------------------
 // Global Variables
@@ -93,6 +94,50 @@ int speed_req()
    return 0;
 }
 
+
+
+// ---------
+// Function: Scheduler
+// ------
+void scheduler() {
+   int sc = 0;
+   int sc_time = 4;
+   int n = 4;  // number of sec. cycles
+
+   start = milis();
+
+   while(1) {
+
+      switch (sc) {
+      case 0:
+         /* functions */
+         break;
+      }
+
+      sc = (sc + 1) % n;
+
+      end = milis();
+
+      if (start > end) {  // overflow
+         elapsed = MAX_MILIS - start + end;
+      } else {
+         elapsed = end - start;
+      }
+
+      // sleep for the rest of the cycle
+      if (sc_time < elapsed) {  // sth went wrong
+         exit();
+      } else if (sc_time - elapsed) < 10 {  // more accurate to use miliseconds
+            delayMicroseconds((sc_time - elapsed) * 1000);
+      } else {
+         delay(sc_time - elapsed);
+      }
+
+      start += sc_time;  // reset timer
+   }
+}
+
+
 // --------------------------------------
 // Function: setup
 // --------------------------------------
@@ -101,6 +146,7 @@ void setup()
    // Setup Serial Monitor
    Serial.begin(9600);
 }
+
 
 // --------------------------------------
 // Function: loop
