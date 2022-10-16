@@ -10,7 +10,7 @@
 // --------------------------------------
 #define SLAVE_ADDR 0x8
 #define MESSAGE_SIZE 8
-#define MAX_MILIS 0xFFFFFFFF  // max number for the milis() clock function
+#define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 
 // --------------------------------------
 // PINOUT
@@ -27,7 +27,7 @@
 // --------------------------------------
 // Global Variables
 // --------------------------------------
-double speed = 55.5;
+double curr_speed = 55.5;
 bool request_received = false;
 bool requested_answered = false;
 char request[MESSAGE_SIZE + 1];
@@ -53,40 +53,40 @@ int comm_server() {
    if (request_received) {
       // if there is an answer send it, else error
       if (requested_answered) {
-          Serial.print(answer);
+         Serial.print(answer);
       } else {
-          Serial.print("MSG: ERR\n");
+         Serial.print("MSG: ERR\n");
       }  
       // reset flags and buffers
       request_received = false;
       requested_answered = false;
-      memset(request,'\0', MESSAGE_SIZE + 1);
-      memset(answer,'\0', MESSAGE_SIZE + 1);
+      memset(request, '\0', MESSAGE_SIZE + 1);
+      memset(answer, '\0', MESSAGE_SIZE + 1);
    }
 
    while (Serial.available()) {
       // read one character
-      car_aux =Serial.read();
+      car_aux = Serial.read();
         
-      //skip if it is not a valid character
+      // skip if it is not a valid character
       if  (((car_aux < 'A') || (car_aux > 'Z')) &&
-           (car_aux != ':') && (car_aux != ' ') && (car_aux != '\n') ) {
+           (car_aux != ':') && (car_aux != ' ') && (car_aux != '\n')) {
          continue;
       }
       
-      //Store the character
+      // store the character
       request[count] = car_aux;
       
-      // If the last character is an enter or
-      // There are 9th characters set an enter and finish.
-      if ((request[count] == '\n') || (count == 8)) {
+      // if the last character is an enter or
+      // there are 9th characters set an enter and finish.
+      if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
          request[count] = '\n';
          count = 0;
          request_received = true;
          break;
       }
 
-      // Increment the count
+      // increment the count
       count++;
    }
 }
@@ -105,7 +105,7 @@ int speed() {
 
       // send the answer for speed request
       char num_str[5];
-      dtostrf(speed, 4, 1, num_str);
+      dtostrf(curr_speed, 4, 1, num_str);
       sprintf(answer, "SPD:%s\n", num_str);
 
       // set request as answered
@@ -120,24 +120,24 @@ void accelerator() {
 
    // If there is a request not answered, check if this is the one
    if (request_received && !requested_answered) {
-      if (0 == strcmp("GAS: SET\n", request))) {  // activate accelerator
+      if (0 == strcmp("GAS: SET\n", request)) {  // activate accelerator
             
          // display LEDs
          digitalWrite(GAS_LED, HIGH);
 
          // answer request
-         sprintf(answer, "GAS:  OK\n", num_str);
+         sprintf(answer, "GAS:  OK\n");
          
          // set request as answered
          requested_answered = true;
 
-      } else if (0 == strcmp("GAS: CLR\n", request))) {  // deactivate accelerator
+      } else if (0 == strcmp("GAS: CLR\n", request)) {  // deactivate accelerator
             
          // display LEDs
          digitalWrite(GAS_LED, LOW);
 
          // answer request
-         sprintf(answer, "GAS:  OK\n", num_str);
+         sprintf(answer, "GAS:  OK\n");
          
          // set request as answered
          requested_answered = true;
@@ -151,24 +151,24 @@ void accelerator() {
 void brake() {
    // If there is a request not answered, check if this is the one
    if (request_received && !requested_answered) {
-      if (0 == strcmp("BRK: SET\n", request))) {  // activate accelerator
+      if (0 == strcmp("BRK: SET\n", request)) {  // activate accelerator
             
          // display LEDs
          digitalWrite(BRK_LED, HIGH);
 
          // answer request
-         sprintf(answer, "BRK:  OK\n", num_str);
+         sprintf(answer, "BRK:  OK\n");
          
          // set request as answered
          requested_answered = true;
 
-      } else if (0 == strcmp("BRK: CLR\n", request))) {  // deactivate accelerator
+      } else if (0 == strcmp("BRK: CLR\n", request)) {  // deactivate accelerator
             
          // display LEDs
          digitalWrite(BRK_LED, LOW);
 
          // answer request
-         sprintf(answer, "BRK:  OK\n", num_str);
+         sprintf(answer, "BRK:  OK\n");
          
          // set request as answered
          requested_answered = true;
@@ -183,24 +183,24 @@ void brake() {
 void mixer() {
    // If there is a request not answered, check if this is the one
    if (request_received && !requested_answered) {
-      if (0 == strcmp("MIX: SET\n", request))) {  // activate accelerator
+      if (0 == strcmp("MIX: SET\n", request)) {  // activate accelerator
             
          // display LEDs
          digitalWrite(MIX_LED, HIGH);
 
          // answer request
-         sprintf(answer, "MIX:  OK\n", num_str);
+         sprintf(answer, "MIX:  OK\n");
          
          // set request as answered
          requested_answered = true;
 
-      } else if (0 == strcmp("MIX: CLR\n", request))) {  // deactivate accelerator
+      } else if (0 == strcmp("MIX: CLR\n", request)) {  // deactivate accelerator
             
          // display LEDs
          digitalWrite(MIX_LED, LOW);
 
          // answer request
-         sprintf(answer, "MIX:  OK\n", num_str);
+         sprintf(answer, "MIX:  OK\n");
          
          // set request as answered
          requested_answered = true;
@@ -222,13 +222,13 @@ void slope() {
 
       // answer request
       if (!isDown && !isUp) {
-         sprintf(answer, "SLP:  FLAT\n", num_str);
+         sprintf(answer, "SLP:  FLAT\n");
       } else if (isDown && isUp) { // error
-         sprintf(answer, "MSG: ERR\n", num_str);
+         sprintf(answer, "MSG: ERR\n");
       } else if (isUp) {
-         sprintf(answer, "SLP:  UP\n", num_str);
+         sprintf(answer, "SLP:  UP\n");
       } else if (isDown) {
-         sprintf(answer, "SLP:  DOWN\n", num_str);
+         sprintf(answer, "SLP:  DOWN\n");
       }
 
       // set request as answered
@@ -241,8 +241,9 @@ void scheduler() {
    int sc = 0;
    int sc_time = 4;
    int n = 4;  // number of sec. cycles
+   int elapsed;
 
-   start = milis();
+   int start = millis();
 
    while(1) {
 
@@ -254,18 +255,19 @@ void scheduler() {
 
       sc = (sc + 1) % n;
 
-      end = milis();
+      int end = millis();
 
       if (start > end) {  // overflow
-         elapsed = MAX_MILIS - start + end;
+         elapsed = MAX_MILLIS - start + end;
       } else {
          elapsed = end - start;
       }
 
       // sleep for the rest of the cycle
       if (sc_time < elapsed) {  // sth went wrong
-         exit();
-      } else if (sc_time - elapsed) < 10 {  // more accurate to use miliseconds
+         sprintf(answer, "MSG: ERR\n");
+         break;
+      } else if ((sc_time - elapsed) < 10) {  // more accurate to use miliseconds
             delayMicroseconds((sc_time - elapsed) * 1000);
       } else {
          delay(sc_time - elapsed);
@@ -297,6 +299,35 @@ void setup() {
 
 
 void loop() {
+   serial_test();
+}
+
+
+// --------------------------------------
+// TEST FUNCTIONS
+// --------------------------------------
+
+void serial_test() {
    comm_server();
-   speed_req();
+   
+   Serial.print(Serial.available());
+   Serial.print(" ");
+   Serial.print(request_received);
+   Serial.print(requested_answered);
+   Serial.print(" ");
+   Serial.print(request);
+   Serial.print("  ");
+  
+   // speed();
+   accelerator();
+   slope();
+   brake();
+   mixer();
+  
+  
+   Serial.print(request_received);
+   Serial.print(requested_answered);
+   Serial.print("\n");
+   
+   delay(1000);
 }
