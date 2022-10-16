@@ -11,6 +11,8 @@
 #define SLAVE_ADDR 0x8
 #define MESSAGE_SIZE 8
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
+#define MIN_SPEED 40
+#define MAX_SPEED 70
 
 // --------------------------------------
 // PINOUT
@@ -28,6 +30,8 @@
 // Global Variables
 // --------------------------------------
 double curr_speed = 55.5;
+bool isAcc = false;
+bool isBrk = false;
 bool request_received = false;
 bool requested_answered = false;
 char request[MESSAGE_SIZE + 1];
@@ -97,6 +101,26 @@ int speed() {
    Answer speed request from Serial & update speed
    */
 
+   // read slope
+   bool isDown = digitalRead(DOWN_SLP_SWITCH);
+   bool isUp = digitalRead(UP_SLP_SWITCH);
+
+   // compute speed due to slope
+    if (isDown && isUp) { // error
+      return -1;
+   } else if (isUp) {  // decelerate
+      curr_speed -= 0.25 * 0.2;  // 0.25 m/s^2 * 0.2 s
+   } else if (isDown) {  // accelerate
+      curr_speed += 0.25 * 0.2;
+   }
+
+   // compute speed due to machine
+   if (isBrk) { curr_speed -= 0.5 * 0.2; }
+   if (isAcc) { curr_speed += 0.5 * 0.2; }
+
+   // LED
+   analogWrite(SPD_LED, map(curr_speed, MIN_SPEED, MAX_SPEED, 0, 255));
+
    // If there is a request not answered, check if this is the one
    if (request_received && !requested_answered &&
       (0 == strcmp("SPD: REQ\n", request))) {
@@ -121,6 +145,8 @@ void accelerator() {
    // If there is a request not answered, check if this is the one
    if (request_received && !requested_answered) {
       if (0 == strcmp("GAS: SET\n", request)) {  // activate accelerator
+
+         isAcc = true;
             
          // display LEDs
          digitalWrite(GAS_LED, HIGH);
@@ -132,7 +158,9 @@ void accelerator() {
          requested_answered = true;
 
       } else if (0 == strcmp("GAS: CLR\n", request)) {  // deactivate accelerator
-            
+         
+         isAcc = false;
+
          // display LEDs
          digitalWrite(GAS_LED, LOW);
 
@@ -152,6 +180,8 @@ void brake() {
    // If there is a request not answered, check if this is the one
    if (request_received && !requested_answered) {
       if (0 == strcmp("BRK: SET\n", request)) {  // activate accelerator
+
+         isBrk = true;
             
          // display LEDs
          digitalWrite(BRK_LED, HIGH);
@@ -163,6 +193,8 @@ void brake() {
          requested_answered = true;
 
       } else if (0 == strcmp("BRK: CLR\n", request)) {  // deactivate accelerator
+         
+         isBrk = false;
             
          // display LEDs
          digitalWrite(BRK_LED, LOW);
@@ -300,6 +332,7 @@ void setup() {
 
 void loop() {
    serial_test();
+   delay(1000);
 }
 
 
@@ -322,7 +355,7 @@ void serial_test() {
    Serial.print(request);
    Serial.print("  ");
   
-   // speed();
+   speed();
    accelerator();
    slope();
    brake();
@@ -331,19 +364,17 @@ void serial_test() {
   
    Serial.print(request_received);
    Serial.print(requested_answered);
-   Serial.print("\n");
-   
-   delay(1000);
+   Serial.print("\n");   
 }
 
 void task_test() {
    /*
    Test compute time of each task 
+   NOTE: For worst-case, perform in down slope
    */
    
    int testResults[6][10];
 
-   /*
    // speed
    Serial.print("Speed:\n");
 
@@ -364,7 +395,6 @@ void task_test() {
       // print results
       Serial.println(stop_time - start_time);
    }
-   */
    
    // accelerator - SET
    Serial.print("Accelerator:\n");
@@ -508,8 +538,5 @@ void task_test() {
    }
 
    // TODO: comm_server
-
-   delay(1000);
-
 
 }
