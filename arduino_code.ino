@@ -308,6 +308,10 @@ void loop() {
 // --------------------------------------
 
 void serial_test() {
+   /*
+   Test messages through serial
+   */
+
    comm_server();
    
    Serial.print(Serial.available());
@@ -330,4 +334,182 @@ void serial_test() {
    Serial.print("\n");
    
    delay(1000);
+}
+
+void task_test() {
+   /*
+   Test compute time of each task 
+   */
+   
+   int testResults[6][10];
+
+   /*
+   // speed
+   Serial.print("Speed:\n");
+
+   for (int i = 0; i <= 10; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "SPD: REQ\n";
+
+      // run test
+      int start_time = micros();
+      speed();
+      int stop_time = micros();
+
+      // save results
+      testResults[0][i] = stop_time - start_time;
+      
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   */
+   
+   // accelerator - SET
+   Serial.print("Accelerator:\n");
+
+   for (int i = 0; i <= 5; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "GAS: SET\n";
+
+      // run test
+      int start_time = micros();
+      accelerator();
+      int stop_time = micros();
+
+      // save results
+      testResults[1][i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   // accelerator - CLR
+   for (int i = 0; i <= 5; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "GAS: CLR\n";
+
+      // run test
+      int start_time = micros();
+      accelerator();
+      int stop_time = micros();
+
+      // save results
+      testResults[1][5 + i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   // brake - SET
+   Serial.print("Brake:\n");
+
+   for (int i = 0; i <= 5; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "BRK: SET\n";
+
+      // run test
+      int start_time = micros();
+      brake();
+      int stop_time = micros();
+
+      // save results
+      testResults[2][i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   // brake - CLR
+   for (int i = 0; i <= 5; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "BRK: CLR\n";
+
+      // run test
+      int start_time = micros();
+      brake();
+      int stop_time = micros();
+
+      // save results
+      testResults[2][5 + i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   // mixer - SET
+   Serial.print("Mixer:\n");
+
+   for (int i = 0; i <= 5; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "MIX: SET\n";
+
+      // run test
+      int start_time = micros();
+      brake();
+      int stop_time = micros();
+
+      // save results
+      testResults[3][i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   // mixer - CLR
+   for (int i = 0; i <= 5; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "MIX: CLR\n";
+
+      // run test
+      int start_time = micros();
+      brake();
+      int stop_time = micros();
+
+      // save results
+      testResults[3][5 + i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   // slope
+   Serial.print("Slope:\n");
+
+   for (int i = 0; i <= 10; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "SLP: REQ\n";
+
+      // run test
+      int start_time = micros();
+      slope();
+      int stop_time = micros();
+
+      // save results
+      testResults[4][i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+
+   // TODO: comm_server
+
+   delay(1000);
+
+
 }
