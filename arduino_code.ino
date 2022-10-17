@@ -9,6 +9,7 @@
 // Global Constants
 // --------------------------------------
 #define SLAVE_ADDR 0x8
+// #define MESSAGE_SIZE 7
 #define MESSAGE_SIZE 8
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 #define MIN_SPEED 40
@@ -32,6 +33,7 @@
 double curr_speed = 55.5;
 bool isAcc = false;
 bool isBrk = false;
+bool isMix = false;
 bool request_received = false;
 bool requested_answered = false;
 char request[MESSAGE_SIZE + 1];
@@ -47,6 +49,7 @@ int comm_server() {
    Read messages from Serial port
    */
 
+   // int count = 0;
    static int count = 0;
    char car_aux;
 
@@ -84,6 +87,7 @@ int comm_server() {
       // if the last character is an enter or
       // there are 9th characters set an enter and finish.
       if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
+         // request[count + 1] = '\n';
          request[count] = '\n';
          count = 0;
          request_received = true;
@@ -121,12 +125,10 @@ int speed() {
    // LED
    analogWrite(SPD_LED, map(curr_speed, MIN_SPEED, MAX_SPEED, 0, 255));
 
-   // If there is a request not answered, check if this is the one
+   // answer request
    if (request_received && !requested_answered &&
       (0 == strcmp("SPD: REQ\n", request))) {
       
-      // TODO: Compute speed
-
       // send the answer for speed request
       char num_str[5];
       dtostrf(curr_speed, 4, 1, num_str);
@@ -135,16 +137,21 @@ int speed() {
       // set request as answered
       requested_answered = true;
    }
-   // TODO: Errors?
    return 0;
 }
 
 
 void accelerator() {
 
-   // If there is a request not answered, check if this is the one
+   // answer request
    if (request_received && !requested_answered) {
       if (0 == strcmp("GAS: SET\n", request)) {  // activate accelerator
+
+         if (isAcc) {  // already accelerating
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
 
          isAcc = true;
             
@@ -159,6 +166,12 @@ void accelerator() {
 
       } else if (0 == strcmp("GAS: CLR\n", request)) {  // deactivate accelerator
          
+         if (!isAcc) {  // already deactivated
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isAcc = false;
 
          // display LEDs
@@ -171,15 +184,20 @@ void accelerator() {
          requested_answered = true;
 
       }
-      // TODO: Errors?
    }
 }
 
 
 void brake() {
-   // If there is a request not answered, check if this is the one
+   // answer request
    if (request_received && !requested_answered) {
       if (0 == strcmp("BRK: SET\n", request)) {  // activate accelerator
+
+         if (isBrk) {  // already breaking
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
 
          isBrk = true;
             
@@ -194,6 +212,12 @@ void brake() {
 
       } else if (0 == strcmp("BRK: CLR\n", request)) {  // deactivate accelerator
          
+         if (!isBrk) {  // already deactivated
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isBrk = false;
             
          // display LEDs
@@ -207,16 +231,23 @@ void brake() {
 
 
       }
-      // TODO: Errors?
    }
 }
 
 
 void mixer() {
-   // If there is a request not answered, check if this is the one
+   // answer request
    if (request_received && !requested_answered) {
-      if (0 == strcmp("MIX: SET\n", request)) {  // activate accelerator
-            
+      if (0 == strcmp("MIX: SET\n", request)) {  // activate mixer
+         
+         if (isMix) {  // already mixing
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
+         isMix = true;
+
          // display LEDs
          digitalWrite(MIX_LED, HIGH);
 
@@ -226,8 +257,16 @@ void mixer() {
          // set request as answered
          requested_answered = true;
 
-      } else if (0 == strcmp("MIX: CLR\n", request)) {  // deactivate accelerator
-            
+      } else if (0 == strcmp("MIX: CLR\n", request)) {  // deactivate mixer
+         
+         if (!isMix) {  // already deactivated
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
+         isMix = false;
+
          // display LEDs
          digitalWrite(MIX_LED, LOW);
 
@@ -238,13 +277,12 @@ void mixer() {
          requested_answered = true;
 
       }
-      // TODO: Errors?
    }
 }
 
 
 void slope() {
-   // If there is a request not answered, check if this is the one
+   // answer request
    if (request_received && !requested_answered &&
       (0 == strcmp("SLP: REQ\n", request))) {
       
@@ -255,12 +293,12 @@ void slope() {
       // answer request
       if (!isDown && !isUp) {
          sprintf(answer, "SLP:  FLAT\n");
-      } else if (isDown && isUp) { // error
+      } else if (isDown && isUp) {  // error
          sprintf(answer, "MSG: ERR\n");
       } else if (isUp) {
          sprintf(answer, "SLP:  UP\n");
       } else if (isDown) {
-         sprintf(answer, "SLP:  DOWN\n");
+         sprintf(answer, "SLP:DOWN\n");
       }
 
       // set request as answered
@@ -310,16 +348,15 @@ void scheduler() {
 }
 
 
-
-
 // --------------------------------------
 // ARDUINO FUNCTIONS
 // --------------------------------------
+
 void setup() {
-   // Setup Serial Monitor
+   // setup Serial Monitor
    Serial.begin(9600);
 
-   // Setup pins
+   // setup pins
    pinMode(GAS_LED, OUTPUT);
    pinMode(BRK_LED, OUTPUT);
    pinMode(MIX_LED, OUTPUT);
