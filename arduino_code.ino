@@ -9,11 +9,13 @@
 // Global Constants
 // --------------------------------------
 #define SLAVE_ADDR 0x8
-// #define MESSAGE_SIZE 7
 #define MESSAGE_SIZE 8
+// #define MESSAGE_SIZE 7
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 #define MIN_SPEED 40
 #define MAX_SPEED 70
+
+#define COMP_TEST_ITERATIONS 10  // note: make it an even number
 
 // --------------------------------------
 // PINOUT
@@ -49,8 +51,8 @@ int comm_server() {
    Read messages from Serial port
    */
 
-   // int count = 0;
    static int count = 0;
+   // int count = 0;
    char car_aux;
 
    // If there were a received msg, send the processed answer or ERROR if none.
@@ -87,8 +89,8 @@ int comm_server() {
       // if the last character is an enter or
       // there are 9th characters set an enter and finish.
       if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
-         // request[count + 1] = '\n';
          request[count] = '\n';
+         // request[count + 1] = '\n';
          count = 0;
          request_received = true;
          break;
@@ -368,8 +370,8 @@ void setup() {
 
 
 void loop() {
-   serial_test();
-   delay(1000);
+   task_test();
+   delay(10000);
 }
 
 
@@ -415,7 +417,7 @@ void task_test() {
    // speed
    Serial.print("Speed:\n");
 
-   for (int i = 0; i <= 10; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -436,7 +438,7 @@ void task_test() {
    // accelerator - SET
    Serial.print("Accelerator:\n");
 
-   for (int i = 0; i <= 5; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -455,7 +457,7 @@ void task_test() {
    }
    
    // accelerator - CLR
-   for (int i = 0; i <= 5; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -476,7 +478,7 @@ void task_test() {
    // brake - SET
    Serial.print("Brake:\n");
 
-   for (int i = 0; i <= 5; i++) {
+   for (int i = 0; i < 5; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -495,7 +497,7 @@ void task_test() {
    }
    
    // brake - CLR
-   for (int i = 0; i <= 5; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -516,7 +518,7 @@ void task_test() {
    // mixer - SET
    Serial.print("Mixer:\n");
 
-   for (int i = 0; i <= 5; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -535,7 +537,7 @@ void task_test() {
    }
    
    // mixer - CLR
-   for (int i = 0; i <= 5; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -556,7 +558,7 @@ void task_test() {
    // slope
    Serial.print("Slope:\n");
 
-   for (int i = 0; i <= 10; i++) {
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
       // setup test
       request_received = true;
       requested_answered = false;
@@ -574,6 +576,68 @@ void task_test() {
       Serial.println(stop_time - start_time);
    }
 
-   // TODO: comm_server
+   // comm_server
+   Serial.print("Communication server:\n");
+
+   for(int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+      /*---
+      SETUP
+      ---*/
+      request_received = true;
+      requested_answered = true;  // for worst-case
+      char answer[] = "--TEST--\n";
+      // char answer[] = "--TEST--";
+
+      int start_time = micros();
+
+      /*---
+      KERNEL
+      ---*/
+
+      static int count = 0;
+      // int count = 0;
+      char car_aux;
+
+      if (request_received) {
+         if (requested_answered) {
+            Serial.print(answer);
+         } else {
+            Serial.print("MSG: ERR\n");
+         }  
+         request_received = false;
+         requested_answered = false;
+         memset(request, '\0', MESSAGE_SIZE + 1);
+         memset(answer, '\0', MESSAGE_SIZE + 1);
+      }
+
+      while (Serial.available()) {
+         car_aux = Serial.read();
+         
+         if  (((car_aux < 'A') || (car_aux > 'Z')) &&
+            (car_aux != ':') && (car_aux != ' ') && (car_aux != '\n')) {
+            continue;
+         }
+         
+         request[count] = car_aux;
+         
+         if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
+            request[count] = '\n';
+            // request[count + 1] = '\n';
+            count = 0;
+            request_received = true;
+            break;
+         }
+
+         count++;
+      }
+
+      int stop_time = micros();
+
+      // save results
+      testResults[5][i] = stop_time - start_time;
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
 
 }
