@@ -351,31 +351,6 @@ void scheduler() {
 
 
 // --------------------------------------
-// ARDUINO FUNCTIONS
-// --------------------------------------
-
-void setup() {
-   // setup Serial Monitor
-   Serial.begin(9600);
-
-   // setup pins
-   pinMode(GAS_LED, OUTPUT);
-   pinMode(BRK_LED, OUTPUT);
-   pinMode(MIX_LED, OUTPUT);
-   pinMode(SPD_LED, OUTPUT);
-   
-   pinMode(DOWN_SLP_SWITCH, INPUT);
-   pinMode(UP_SLP_SWITCH, INPUT);
-}
-
-
-void loop() {
-   task_test();
-   delay(10000);
-}
-
-
-// --------------------------------------
 // TEST FUNCTIONS
 // --------------------------------------
 
@@ -405,6 +380,7 @@ void serial_test() {
    Serial.print(requested_answered);
    Serial.print("\n");   
 }
+
 
 void task_test() {
    /*
@@ -639,5 +615,29 @@ void task_test() {
       // print results
       Serial.println(stop_time - start_time);
    }
+}
 
+
+// --------------------------------------
+// ARDUINO FUNCTIONS
+// --------------------------------------
+
+void setup() {
+   // setup Serial Monitor
+   Serial.begin(9600);
+
+   // setup pins
+   pinMode(GAS_LED, OUTPUT);
+   pinMode(BRK_LED, OUTPUT);
+   pinMode(MIX_LED, OUTPUT);
+   pinMode(SPD_LED, OUTPUT);
+   
+   pinMode(DOWN_SLP_SWITCH, INPUT);
+   pinMode(UP_SLP_SWITCH, INPUT);
+}
+
+
+void loop() {
+   task_test();
+   delay(10000);
 }
