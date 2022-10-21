@@ -602,6 +602,14 @@ void setup() {
 
 
 void loop() {
-   task_test();
-   delay(10000);
+   
+   comm_server();
+
+   speed();
+   accelerator();
+   slope();
+   brake();
+   mixer();
+
+   delay(500);
 }
