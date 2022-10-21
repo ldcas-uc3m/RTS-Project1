@@ -149,6 +149,12 @@ void accelerator() {
    if (request_received && !requested_answered) {
       if (0 == strcmp("GAS: SET\n", request)) {  // activate accelerator
 
+         if (isAcc) {  // already accelerating
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isAcc = true;
             
          // display LEDs
@@ -161,7 +167,13 @@ void accelerator() {
          requested_answered = true;
 
       } else if (0 == strcmp("GAS: CLR\n", request)) {  // deactivate accelerator
-      
+         
+         if (!isAcc) {  // already deactivated
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isAcc = false;
 
          // display LEDs
@@ -183,6 +195,12 @@ void brake() {
    if (request_received && !requested_answered) {
       if (0 == strcmp("BRK: SET\n", request)) {  // activate accelerator
 
+         if (isBrk) {  // already breaking
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isBrk = true;
             
          // display LEDs
@@ -196,6 +214,12 @@ void brake() {
 
       } else if (0 == strcmp("BRK: CLR\n", request)) {  // deactivate accelerator
          
+         if (!isBrk) {  // already deactivated
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isBrk = false;
             
          // display LEDs
@@ -218,6 +242,12 @@ void mixer() {
    if (request_received && !requested_answered) {
       if (0 == strcmp("MIX: SET\n", request)) {  // activate mixer
          
+         if (isMix) {  // already mixing
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
+
          isMix = true;
 
          // display LEDs
@@ -230,6 +260,12 @@ void mixer() {
          requested_answered = true;
 
       } else if (0 == strcmp("MIX: CLR\n", request)) {  // deactivate mixer
+         
+         if (!isMix) {  // already deactivated
+            Serial.print("MSG: ERR\n");
+            requested_answered = true;
+            return;
+         }
 
          isMix = false;
 
@@ -279,7 +315,7 @@ void scheduler() {
    int n = 4;  // number of sec. cycles
    int elapsed;
 
-   unsigned long start = millis();
+   int start = millis();
 
    while(1) {
 
@@ -291,7 +327,7 @@ void scheduler() {
 
       sc = (sc + 1) % n;
 
-      unsigned long end = millis();
+      int end = millis();
 
       if (start > end) {  // overflow
          elapsed = MAX_MILLIS - start + end;
@@ -364,9 +400,9 @@ void task_test() {
       char request[] = "SPD: REQ\n";
 
       // run test
-      unsigned long  start_time = micros();
+      int start_time = micros();
       speed();
-      unsigned long  stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[0][i] = stop_time - start_time;
@@ -385,9 +421,9 @@ void task_test() {
       char request[] = "GAS: SET\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       accelerator();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[1][i] = stop_time - start_time;
@@ -404,9 +440,9 @@ void task_test() {
       char request[] = "GAS: CLR\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       accelerator();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[1][5 + i] = stop_time - start_time;
@@ -425,9 +461,9 @@ void task_test() {
       char request[] = "BRK: SET\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       brake();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[2][i] = stop_time - start_time;
@@ -444,9 +480,9 @@ void task_test() {
       char request[] = "BRK: CLR\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       brake();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[2][5 + i] = stop_time - start_time;
@@ -465,9 +501,9 @@ void task_test() {
       char request[] = "MIX: SET\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       brake();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[3][i] = stop_time - start_time;
@@ -484,9 +520,9 @@ void task_test() {
       char request[] = "MIX: CLR\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       brake();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[3][5 + i] = stop_time - start_time;
@@ -505,9 +541,9 @@ void task_test() {
       char request[] = "SLP: REQ\n";
 
       // run test
-      unsigned long start_time = micros();
+      int start_time = micros();
       slope();
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[4][i] = stop_time - start_time;
@@ -528,7 +564,7 @@ void task_test() {
       char answer[] = "--TEST--\n";
       // char answer[] = "--TEST--";
 
-      unsigned long start_time = micros();
+      int start_time = micros();
 
       /*---
       KERNEL
@@ -571,7 +607,7 @@ void task_test() {
          count++;
       }
 
-      unsigned long stop_time = micros();
+      int stop_time = micros();
 
       // save results
       testResults[5][i] = stop_time - start_time;
@@ -602,14 +638,12 @@ void setup() {
 
 
 void loop() {
-   
-   comm_server();
-
-   speed();
-   accelerator();
-   slope();
-   brake();
-   mixer();
-
-   delay(500);
+  comm_server();
+  accelerator();
+  brake();
+  speed();
+  mixer();
+  slope();
+  //task_test();
+  delay(100);
 }
