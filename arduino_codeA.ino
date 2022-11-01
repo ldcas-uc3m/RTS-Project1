@@ -274,9 +274,9 @@ void slope() {
 
 
 void scheduler() {
-   int sc = 0;
-   int sc_time = 4;
-   int n = 4;  // number of sec. cycles
+   int sc = 0;  // current sec. cycle
+   int sc_time = 200;  // ms
+   int n = 1;  // number of sec. cycles
    int elapsed;
 
    unsigned long start = millis();
@@ -285,7 +285,12 @@ void scheduler() {
 
       switch (sc) {
       case 0:
-         /* functions */
+         comm_server();
+         speed();
+         accelerator();
+         slope();
+         brake();
+         mixer();
          break;
       }
 
@@ -603,13 +608,5 @@ void setup() {
 
 void loop() {
    
-   comm_server();
-
-   speed();
-   accelerator();
-   slope();
-   brake();
-   mixer();
-
-   delay(500);
+   scheduler();
 }
