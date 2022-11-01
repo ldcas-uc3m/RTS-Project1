@@ -16,17 +16,28 @@
 #define MAX_SPEED 70
 
 #define COMP_TEST_ITERATIONS 10  // note: make it an even number
+#define NUM_TASKS 8
 
 // --------------------------------------
 // PINOUT
 // --------------------------------------
+
+/* Digital */
 #define GAS_LED 13
 #define BRK_LED 12
 #define MIX_LED 11
 #define SPD_LED 10
+#define LAM_LED  7
 
 #define DOWN_SLP_SWITCH 9
 #define UP_SLP_SWITCH 8
+
+/* Analog */
+#define PHOTORESISTOR 0
+
+// minimum and maximum light levels for the photoresistor
+#define MIN_LIT 54
+#define MAX_LIT 974
 
 
 // --------------------------------------
@@ -273,6 +284,40 @@ void slope() {
 }
 
 
+void light() {
+   // read light sensor
+   if (request_received && !requested_answered && 
+      (0 == strcmp("LIT: REQ\n", request))) {
+
+      int level = map(analogRead(PHOTORESISTOR), MIN_LIT, MAX_LIT, 0, 99);
+      // send the answer for light request
+      sprintf(answer, "LIT:%i%\n", level);
+
+      // test_light();
+      
+   }
+}
+
+
+void lamp() {
+   if (request_received && !requested_answered) {
+      // light lamps
+      if (0 == strcmp("LAM: SET\n", request)) {
+         digitalWrite(LAM_LED, HIGH);
+         sprintf(answer, "LAM:  OK\n");
+
+      }
+      // clear lamps
+      else if (0 == strcmp("LAM: CLR\n", request)) {
+         digitalWrite(LAM_LED, LOW);
+         sprintf(answer, "LAM:  OK\n");
+      }
+
+      requested_answered = true;
+   }
+}
+
+
 void scheduler() {
    int sc = 0;  // current sec. cycle
    int sc_time = 200;  // ms
@@ -291,6 +336,8 @@ void scheduler() {
          slope();
          brake();
          mixer();
+         light();
+         lamp();
          break;
       }
 
@@ -357,7 +404,7 @@ void task_test() {
    NOTE: For worst-case, perform in down slope
    */
    
-   int testResults[6][10];
+   int testResults[NUM_TASKS][10];
 
    /*-- speed --*/
    Serial.print("Speed:\n");
@@ -583,7 +630,76 @@ void task_test() {
 
       // print results
       Serial.println(stop_time - start_time);
+
+      /*-- light --*/
+      Serial.print("Light:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "LIT: REQ\n";
+
+         // run test
+         unsigned long start_time = micros();
+         light();
+         unsigned long stop_time = micros();
+
+         // save results
+         testResults[6][i] = stop_time - start_time;
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+
+      /*-- lamp - SET --*/ 
+      Serial.print("Lamp:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "LAM: SET\n";
+
+         // run test
+         unsigned long start_time = micros();
+         lamp();
+         unsigned long stop_time = micros();
+
+         // save results
+         testResults[7][i] = stop_time - start_time;
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+      
+      /*-- lamp - CLR --*/ 
+      for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "LAM: CLR\n";
+
+         // run test
+         unsigned long start_time = micros();
+         lamp();
+         unsigned long stop_time = micros();
+
+         // save results
+         testResults[7][(COMP_TEST_ITERATIONS / 2) + i] = stop_time - start_time;
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
    }
+}
+
+
+void test_light() {
+   // tests the current light level for fine-tuning MIN_LIT & MAX_LIT
+   Serial.print("\nLight level: ");
+   Serial.print(analogRead(PHOTORESISTOR));
+   Serial.print("\n");
 }
 
 

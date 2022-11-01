@@ -1,0 +1,1 @@
+For implementation in Tinkercad, set `MESSAGE_SIZE` to `7`, and replace the commented lines by the uncommented ones above in `comm_server`.
