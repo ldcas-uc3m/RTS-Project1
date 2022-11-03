@@ -293,7 +293,9 @@ void light() {
       // send the answer for light request
       sprintf(answer, "LIT:%i%\n", level);
 
-      // test_light();
+      // light_test();
+
+      requested_answered = true;
       
    }
 }
@@ -695,7 +697,7 @@ void task_test() {
 }
 
 
-void test_light() {
+void light_test() {
    // tests the current light level for fine-tuning MIN_LIT & MAX_LIT
    Serial.print("\nLight level: ");
    Serial.print(analogRead(PHOTORESISTOR));
