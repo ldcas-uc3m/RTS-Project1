@@ -431,6 +431,22 @@ void movement_stop() {
 }
 
 
+int emergency() {
+   // checks for an emergency. returns 1 if emergency, else 0
+
+   // answers the request
+   if (request_received && !requested_answered && 
+      (0 == strcmp("ERR: SET\n", request))) {
+
+      sprintf(answer, "ERR:  OK\n");
+
+      return 1;
+      requested_answered = true;
+   }
+
+   return 0;
+}
+
 
 
 // --------------------------------------
@@ -438,8 +454,8 @@ void movement_stop() {
 // --------------------------------------
 
 
-void distance_scheduler() {
-   // returns if it's time to change to next mode
+int distance_scheduler() {
+   // returns 0 if it's time to change to next mode, 1 in case of emergency
 
    int sc = 0;  // current sec. cycle
    int sc_time = 200;  // ms
@@ -467,6 +483,8 @@ void distance_scheduler() {
          }
          movement_go();
 
+         if (emergency() == 1) { return 1; }
+
          break;
       }
 
@@ -495,7 +513,7 @@ void distance_scheduler() {
 }
 
 
-void approaching_scheduler() {
+int approaching_scheduler() {
    // returns if it's time to change to next mode
 
    int sc = 0;  // current sec. cycle
@@ -522,8 +540,11 @@ void approaching_scheduler() {
 
          // check if stopped
          if ((curr_distance == 0) && (curr_speed <= 10)) {
-            return;
+            return 0;
          }
+
+         if (emergency() == 1) { return 1; }
+
 
          break;
       }
@@ -553,7 +574,7 @@ void approaching_scheduler() {
 }
 
 
-void stop_scheduler() {
+int stop_scheduler() {
    // returns if it's time to change to next mode
 
    int sc = 0;  // current sec. cycle
@@ -578,6 +599,8 @@ void stop_scheduler() {
          if (distance_validate() == 1){
             return;
          }
+
+         if (emergency() == 1) { return 1; }
 
          movement_stop();
 
@@ -608,6 +631,66 @@ void stop_scheduler() {
    }
 }
 
+
+void emergency_scheduler() {
+   // returns 0 if it's time to change to next mode, 1 in case of emergency
+
+   int sc = 0;  // current sec. cycle
+   int sc_time = 200;  // ms
+   int n = 1;  // number of sec. cycles
+   int elapsed;
+   
+
+   unsigned long start = millis();
+
+   while(1) {
+
+      switch (sc) {
+      case 0:
+         comm_server();
+         accelerator();
+         // TODO: modify modes
+         brake();
+         mixer();
+         speed();
+         slope();
+         light();
+         lamp();
+         distance_select();
+         distance_display(0);
+         if (distance_validate() == 1){
+            return;
+         }
+         movement_go();
+
+         if (emergency() == 1) { return 1; }
+
+         break;
+      }
+
+      sc = (sc + 1) % n;
+
+      unsigned long end = millis();
+
+      if (start > end) {  // overflow
+         elapsed = MAX_MILLIS - start + end;
+      } else {
+         elapsed = end - start;
+      }
+
+      // sleep for the rest of the cycle
+      if (sc_time < elapsed) {  // sth went wrong
+         sprintf(answer, "MSG: ERR\n");
+         break;
+      } else if ((sc_time - elapsed) < 10) {  // more accurate to use miliseconds
+            delayMicroseconds((sc_time - elapsed) * 1000);
+      } else {
+         delay(sc_time - elapsed);
+      }
+
+      start += sc_time;  // reset timer
+   }
+}
 
 
 // --------------------------------------
@@ -980,9 +1063,13 @@ void setup() {
 
 
 void loop() {
-   distance_scheduler();
-   approaching_scheduler();
-   stop_scheduler();
+   // the schedulers are executed sequentially. when one finishes, it returns 0 to change to 
+   // the next mode.
+   // if it returns 1, it enters into emergency mode
+
+   if (distance_scheduler() == 1) { emergency_scheduler(); }
+   if (approaching_scheduler() == 1) { emergency_scheduler(); }
+   if (stop_scheduler() == 1) { emergency_scheduler(); }
 
    // light_test();
    // potentiometer_test();
