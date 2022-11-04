@@ -12,8 +12,14 @@
 #define MESSAGE_SIZE 8
 // #define MESSAGE_SIZE 7
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
+
+// minumum and maximum speeds
 #define MIN_SPEED 40
 #define MAX_SPEED 70
+
+// minumum and maximum distances
+#define MIN_DISTANCE 10000
+#define MAX_DISTANCE 90000
 
 #define COMP_TEST_ITERATIONS 10  // note: make it an even number
 #define NUM_TASKS 8
@@ -47,6 +53,10 @@
 #define MIN_LIT 54
 #define MAX_LIT 974
 
+// minumum and maximum values for the potentiometer
+#define MIN_POT 511
+#define MAX_POT 1023
+
 
 // --------------------------------------
 // Global Variables
@@ -62,7 +72,7 @@ bool requested_answered = false;
 const char request[MESSAGE_SIZE + 1];
 const char answer[MESSAGE_SIZE + 1];
 
-const byte BCD[9][4] = {  // translate numbers into (reversed) bit string for 7-segment display 
+const byte BCD[10][4] = {  // translate numbers into (reversed) bit string for 7-segment display 
    {0,0,0,0},  // 0
    {1,0,0,0},  // 1
    {0,1,0,0},  // 2
@@ -343,20 +353,34 @@ void lamp() {
 
 
 void distance_select() {
-   // TODO: distance_select
+   curr_distance = map(value, MIN_POT, MAX_POT, MIN_DISTANCE, MAX_DISTANCE);
 }
 
 
-void distance_display() {
+void distance_display(int mode) {
+   /* 
+   This function has two modes:
+   - mode 0: distance selection mode
+   - mode 1: approaching mode
+   */
+
    // thanks to https://www.tinkercad.com/things/3bH6sxdJBnt-bcd-to-seven-segment-decoder
    // and https://www.tinkercad.com/things/3bH6sxdJBnt-bcd-to-seven-segment-decoder
 
-   // update the distance
-   curr_distance -= curr_speed * 0.2;  // m/s * s
+   if (mode == 1) {
+      // compute new distance
+
+      // check if it's near the stop (if going to stop in 2 cycles)
+      if ((curr_distance - (curr_speed * 2 * 0.2) <= 0) || (curr_distance == 0)) {
+         curr_distance = 0;
+      } else { // update the distance
+         curr_distance -= curr_speed * 0.2;  // m/s * s
+      }
+   }
 
    // translate the current velocity into one digit
-   int n = curr_distance / 1000;
-   if (curr_distance % 1000 >= 500) {n++;}
+   int n = curr_distance / 10000;
+   if (curr_distance % 10000 >= 5000) {n++;}
 
    // display number
    for(int i = 0; i < 4; i++){
@@ -377,9 +401,7 @@ void distance_display() {
 int distance_validate() {
    // returns 1 if the button was pressed, else 0
 
-   // TODO: distance_validate
-
-   return 0;
+   return (digitalRead(STP_BUTTON));
 }
 
 
@@ -414,8 +436,8 @@ void movement_stop() {
 // --------------------------------------
 
 
-int distance_scheduler() {
-   // returns 1 if it's time to change to next mode, else 0
+void distance_scheduler() {
+   // returns if it's time to change to next mode
 
    int sc = 0;  // current sec. cycle
    int sc_time = 200;  // ms
@@ -429,17 +451,17 @@ int distance_scheduler() {
       switch (sc) {
       case 0:
          comm_server();
-         speed();
          accelerator();
-         slope();
          brake();
          mixer();
+         speed();
+         slope();
          light();
          lamp();
          distance_select();
-         distance_display();
+         distance_display(0);
          if (distance_validate() == 1){
-            return 1;
+            return;
          }
          movement_go();
 
@@ -468,12 +490,11 @@ int distance_scheduler() {
 
       start += sc_time;  // reset timer
    }
-   return 0;
 }
 
 
-int approaching_scheduler() {
-   // returns 1 if it's time to change to next mode, else 0
+void approaching_scheduler() {
+   // returns if it's time to change to next mode
 
    int sc = 0;  // current sec. cycle
    int sc_time = 200;  // ms
@@ -487,13 +508,20 @@ int approaching_scheduler() {
       switch (sc) {
       case 0:
          comm_server();
-         speed();
          accelerator();
-         slope();
          brake();
          mixer();
+         speed();
+         slope();
          light();
          lamp();
+         distance_display(1);
+         movement_go();
+
+         // check if stopped
+         if ((curr_distance == 0) && (curr_speed <= 10)) {
+            return;
+         }
 
          break;
       }
@@ -520,12 +548,11 @@ int approaching_scheduler() {
 
       start += sc_time;  // reset timer
    }
-   return 0;
 }
 
 
-int stop_scheduler() {
-   // returns 1 if it's time to change to next mode, else 0
+void stop_scheduler() {
+   // returns if it's time to change to next mode
 
    int sc = 0;  // current sec. cycle
    int sc_time = 200;  // ms
@@ -539,13 +566,18 @@ int stop_scheduler() {
       switch (sc) {
       case 0:
          comm_server();
-         speed();
          accelerator();
-         slope();
          brake();
          mixer();
+         speed();
+         slope();
          light();
          lamp();
+         if (distance_validate() == 1){
+            return;
+         }
+
+         movement_stop();
 
          break;
       }
@@ -572,7 +604,6 @@ int stop_scheduler() {
 
       start += sc_time;  // reset timer
    }
-   return 0;
 }
 
 
@@ -588,7 +619,7 @@ void serial_test() {
 
    comm_server();
    
-   Serial.print(Serial.available());
+   Serial.print(Serial.available());  // message length
    Serial.print(" ");
    Serial.print(request_received);
    Serial.print(requested_answered);
@@ -916,6 +947,14 @@ void light_test() {
 }
 
 
+void potentiometer_test() {
+   // tests the current potentiometer level for fine-tuning MIN_POT & MAX_POT
+   Serial.print("\nPotentiometer level: ");
+   Serial.print(analogRead(POTENTIOMETER));
+   Serial.print("\n");
+}
+
+
 // --------------------------------------
 // ARDUINO FUNCTIONS
 // --------------------------------------
@@ -939,8 +978,11 @@ void setup() {
 
 
 void loop() {
-   while (distance_scheduler() != 1){}
-   while (approaching_scheduler() != 1){}
-   while (stop_scheduler() != 1){}
+   distance_scheduler();
+   approaching_scheduler();
+   stop_scheduler();
+
+   // light_test();
+   // potentiometer_test();
    
 }
