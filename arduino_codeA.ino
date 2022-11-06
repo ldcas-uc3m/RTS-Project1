@@ -10,7 +10,7 @@
 // --------------------------------------
 #define SLAVE_ADDR 0x8
 #define MESSAGE_SIZE 9
-// #define MESSAGE_SIZE 7
+// #define MESSAGE_SIZE 8
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 #define MIN_SPEED 40
 #define MAX_SPEED 70
@@ -51,8 +51,7 @@ int comm_server() {
    Read messages from Serial port
    */
 
-   static int count = 0;
-   // int count = 0;
+   int count = 0;
    char car_aux;
 
    // If there were a received msg, send the processed answer or ERROR if none.
@@ -125,6 +124,9 @@ int speed() {
    // compute speed due to machine
    if (isBrk) { curr_speed -= 0.5 * 0.2; }
    if (isAcc) { curr_speed += 0.5 * 0.2; }
+
+   // prevent negative speed
+   if (curr_speed <= 0) { curr_speed = 0; }
 
    // LED
    analogWrite(SPD_LED, map(curr_speed, MIN_SPEED, MAX_SPEED, 0, 255));

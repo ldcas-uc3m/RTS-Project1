@@ -10,7 +10,7 @@
 // --------------------------------------
 #define SLAVE_ADDR 0x8
 #define MESSAGE_SIZE 9
-// #define MESSAGE_SIZE 7
+// #define MESSAGE_SIZE 8
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 
 // minumum and maximum speeds
@@ -96,8 +96,7 @@ void comm_server() {
    Read messages from Serial port
    */
 
-   static int count = 0;
-   // int count = 0;
+   int count = 0;
    char car_aux;
 
    // If there were a received msg, send the processed answer or ERROR if none.
@@ -175,6 +174,9 @@ void speed(int mode = 0) {
       if (isBrk) { curr_speed -= 0.5 * 0.2; }
       if (isAcc) { curr_speed += 0.5 * 0.2; }
 
+      // prevent negative speed
+      if (curr_speed <= 0) { curr_speed = 0; }
+
    } else if (mode == 1) {
       curr_speed = 0;
    }
@@ -237,11 +239,13 @@ void accelerator(int mode = 0) {
       }
    } else if (mode == 1) {
       isAcc = false;
+      digitalWrite(GAS_LED, HIGH);
+
    }
 }
 
 
-void brake() {
+void brake(int mode = 0) {
    /*
    Two modes: 
    - 0: normal mode
@@ -282,6 +286,7 @@ void brake() {
       }
    } else if (mode == 1) {
       isBrk = false;
+      digitalWrite(BRK_LED, HIGH);
    }
 }
 
@@ -480,8 +485,8 @@ int emergency() {
 
       sprintf(answer, "ERR:  OK\n");
 
-      return 1;
       requested_answered = true;
+      return 1;
    }
 
    return 0;
@@ -722,8 +727,6 @@ void emergency_scheduler() {
          slope();
          light();
          lamp(1);
-         distance_select();
-         distance_display(0);
 
          break;
       }
@@ -800,8 +803,6 @@ void task_test() {
    NOTE: For worst-case, perform in down slope
    */
    
-   int testResults[NUM_TASKS][10];
-
    /*-- speed --*/
    Serial.print("Speed:\n");
 
@@ -813,12 +814,9 @@ void task_test() {
 
       // run test
       unsigned long  start_time = micros();
-      speed();
+      speed(0);  // worst-case is mode 0
       unsigned long  stop_time = micros();
 
-      // save results
-      testResults[0][i] = stop_time - start_time;
-      
       // print results
       Serial.println(stop_time - start_time);
    }
@@ -834,11 +832,8 @@ void task_test() {
 
       // run test
       unsigned long start_time = micros();
-      accelerator();
+      accelerator(0);  // worst-case is mode 0
       unsigned long stop_time = micros();
-
-      // save results
-      testResults[1][i] = stop_time - start_time;
 
       // print results
       Serial.println(stop_time - start_time);
@@ -853,11 +848,8 @@ void task_test() {
 
       // run test
       unsigned long start_time = micros();
-      accelerator();
+      accelerator(0);  // worst-case is mode 0
       unsigned long stop_time = micros();
-
-      // save results
-      testResults[1][(COMP_TEST_ITERATIONS / 2) + i] = stop_time - start_time;
 
       // print results
       Serial.println(stop_time - start_time);
@@ -874,11 +866,8 @@ void task_test() {
 
       // run test
       unsigned long start_time = micros();
-      brake();
+      brake(0);  // worst-case is mode 0
       unsigned long stop_time = micros();
-
-      // save results
-      testResults[2][i] = stop_time - start_time;
 
       // print results
       Serial.println(stop_time - start_time);
@@ -895,9 +884,6 @@ void task_test() {
       unsigned long start_time = micros();
       brake();
       unsigned long stop_time = micros();
-
-      // save results
-      testResults[2][(COMP_TEST_ITERATIONS / 2) + i] = stop_time - start_time;
 
       // print results
       Serial.println(stop_time - start_time);
@@ -917,9 +903,6 @@ void task_test() {
       mixer();
       unsigned long stop_time = micros();
 
-      // save results
-      testResults[3][i] = stop_time - start_time;
-
       // print results
       Serial.println(stop_time - start_time);
    }
@@ -935,9 +918,6 @@ void task_test() {
       unsigned long start_time = micros();
       mixer();
       unsigned long stop_time = micros();
-
-      // save results
-      testResults[3][(COMP_TEST_ITERATIONS / 2) + i] = stop_time - start_time;
 
       // print results
       Serial.println(stop_time - start_time);
@@ -956,9 +936,6 @@ void task_test() {
       unsigned long start_time = micros();
       slope();
       unsigned long stop_time = micros();
-
-      // save results
-      testResults[4][i] = stop_time - start_time;
 
       // print results
       Serial.println(stop_time - start_time);
@@ -1021,9 +998,6 @@ void task_test() {
 
       unsigned long stop_time = micros();
 
-      // save results
-      testResults[5][i] = stop_time - start_time;
-
       // print results
       Serial.println(stop_time - start_time);
 
@@ -1041,9 +1015,6 @@ void task_test() {
          light();
          unsigned long stop_time = micros();
 
-         // save results
-         testResults[6][i] = stop_time - start_time;
-
          // print results
          Serial.println(stop_time - start_time);
       }
@@ -1059,11 +1030,8 @@ void task_test() {
 
          // run test
          unsigned long start_time = micros();
-         lamp();
+         lamp(0);  // worst-case is mode 0
          unsigned long stop_time = micros();
-
-         // save results
-         testResults[7][i] = stop_time - start_time;
 
          // print results
          Serial.println(stop_time - start_time);
@@ -1078,18 +1046,115 @@ void task_test() {
 
          // run test
          unsigned long start_time = micros();
-         lamp();
+         lamp(0);  // worst-case is mode 0
          unsigned long stop_time = micros();
-
-         // save results
-         testResults[7][(COMP_TEST_ITERATIONS / 2) + i] = stop_time - start_time;
 
          // print results
          Serial.println(stop_time - start_time);
       }
 
-      // TODO: rest of tests
+      /*-- distance_select --*/
+      Serial.print("distance_select:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+
+         // run test
+         unsigned long start_time = micros();
+         distance_select();
+         unsigned long stop_time = micros();
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+      
+      /*-- distance_display --*/
+      Serial.print("distance_display:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "DS:  REQ\n";
+
+         // run test
+         unsigned long start_time = micros();
+         distance_display(1);  // worst-case is mode 1
+         unsigned long stop_time = micros();
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+      
+      /*-- distance_validate --*/
+      Serial.print("distance_validate:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+
+         // run test
+         unsigned long start_time = micros();
+         distance_validate();
+         unsigned long stop_time = micros();
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+
+      /*-- movement_go --*/
+      Serial.print("movement_go:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "STP: REQ\n";
+
+         // run test
+         unsigned long start_time = micros();
+         movement_go();  // worst-case is mode 1
+         unsigned long stop_time = micros();
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+      
+      /*-- movement_stop --*/
+      Serial.print("movement_stop:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "STP: REQ\n";
+
+         // run test
+         unsigned long start_time = micros();
+         movement_stop();  // worst-case is mode 1
+         unsigned long stop_time = micros();
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
+      
+      /*-- emergency --*/
+      Serial.print("emergency:\n");
+
+      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+         // setup test
+         request_received = true;
+         requested_answered = false;
+         char request[] = "ERR: SET\n";
+
+         // run test
+         unsigned long start_time = micros();
+         emergency();
+         unsigned long stop_time = micros();
+
+         // print results
+         Serial.println(stop_time - start_time);
+      }
    }
+
+   delay(10000);
 }
 
 
@@ -1098,6 +1163,8 @@ void light_test() {
    Serial.print("\nLight level: ");
    Serial.print(analogRead(PHOTORESISTOR));
    Serial.print("\n");
+   
+   delay(100);
 }
 
 
@@ -1106,6 +1173,8 @@ void potentiometer_test() {
    Serial.print("\nPotentiometer level: ");
    Serial.print(analogRead(POTENTIOMETER));
    Serial.print("\n");
+
+   delay(100);
 }
 
 
@@ -1133,13 +1202,26 @@ void setup() {
 
 
 void loop() {
-   // the schedulers are executed sequentially. when one finishes, it returns 0 to change to 
-   // the next mode.
-   // if it returns 1, it enters into emergency mode
+   /* 
+   the schedulers are executed sequentially. when one finishes, it returns 0 to change to 
+   the next mode  if it returns 1, it enters into emergency mode.
+   */
 
-   if (distance_scheduler() == 1) { emergency_scheduler(); }
-   if (approaching_scheduler() == 1) { emergency_scheduler(); }
-   if (stop_scheduler() == 1) { emergency_scheduler(); }
+   // Serial.print("Distance selection mode\n");
+   if (distance_scheduler() == 1) { 
+      // Serial.print("Emergency mode\n");
+      emergency_scheduler();
+   }
+   // Serial.print("Approach mode\n");
+   if (approaching_scheduler() == 1) { 
+      // Serial.print("Emergency mode\n");
+      emergency_scheduler();
+   }
+   // Serial.print("Stop mode\n");
+   if (stop_scheduler() == 1) { 
+      // Serial.print("Emergency mode\n");
+      emergency_scheduler();
+   }
 
    // light_test();
    // potentiometer_test();
