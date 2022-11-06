@@ -9,10 +9,10 @@
 // Global Constants
 // --------------------------------------
 #define SLAVE_ADDR 0x8
-#define MESSAGE_SIZE 8
+#define MESSAGE_SIZE 9
 // #define MESSAGE_SIZE 7
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
-#define MIN_SPEED 40
+#define MIN_SPEED 0
 #define MAX_SPEED 70
 
 #define COMP_TEST_ITERATIONS 10  // note: make it an even number
@@ -76,6 +76,7 @@ int comm_server() {
          Serial.print(answer);
       } else {
          Serial.print("MSG: ERR\n");
+         requested_answered = true;
       }  
       // reset flags and buffers
       request_received = false;
@@ -291,12 +292,11 @@ void light() {
 
       int level = map(analogRead(PHOTORESISTOR), MIN_LIT, MAX_LIT, 0, 99);
       // send the answer for light request
-      sprintf(answer, "LIT:%i%\n", level);
+      sprintf(answer, "LIT:%02d%%\n", level);
 
       // light_test();
 
       requested_answered = true;
-      
    }
 }
 
@@ -308,14 +308,17 @@ void lamp() {
          digitalWrite(LAM_LED, HIGH);
          sprintf(answer, "LAM:  OK\n");
 
+         requested_answered = true;
+
       }
       // clear lamps
       else if (0 == strcmp("LAM: CLR\n", request)) {
          digitalWrite(LAM_LED, LOW);
          sprintf(answer, "LAM:  OK\n");
-      }
 
-      requested_answered = true;
+         requested_answered = true;
+      }
+      
    }
 }
 

@@ -9,12 +9,12 @@
 // Global Constants
 // --------------------------------------
 #define SLAVE_ADDR 0x8
-#define MESSAGE_SIZE 8
+#define MESSAGE_SIZE 9
 // #define MESSAGE_SIZE 7
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 
 // minumum and maximum speeds
-#define MIN_SPEED 40
+#define MIN_SPEED 0
 #define MAX_SPEED 70
 
 // minumum and maximum distances
@@ -62,15 +62,15 @@
 // Global Variables
 // --------------------------------------
 double curr_speed = 55.5;
-int curr_distance = 0;
+long curr_distance = 0;
 bool isAcc = false;
 bool isBrk = false;
 bool isMix = false;
 bool request_received = false;
 bool requested_answered = false;
 
-const char request[MESSAGE_SIZE + 1];
-const char answer[MESSAGE_SIZE + 1];
+char request[MESSAGE_SIZE + 1];
+char answer[MESSAGE_SIZE + 1];
 
 const byte BCD[10][4] = {  // translate numbers into (reversed) bit string for 7-segment display 
    {0,0,0,0},  // 0
@@ -110,6 +110,7 @@ void comm_server() {
          Serial.print(answer);
       } else {
          Serial.print("MSG: ERR\n");
+         requested_answered = true;
       }  
       // reset flags and buffers
       request_received = false;
@@ -134,6 +135,7 @@ void comm_server() {
       // if the last character is an enter or
       // there are 9th characters set an enter and finish.
       if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
+      // if ((request[count] == '\n') || (count == MESSAGE_SIZE - 1)) {
          request[count] = '\n';
          // request[count + 1] = '\n';
          count = 0;
@@ -147,30 +149,36 @@ void comm_server() {
 }
 
 
-void speed() {
+void speed(int mode = 0) {
    /*
    Answer speed request from Serial & update speed
+   Two modes: 
+   - 0: normal mode
+   - 1: stop/emergency mode (off)
    */
 
-   // TODO: set speed to 0 when stopped
+   if (mode == 0) {
+      // read slope
+      bool isDown = digitalRead(DOWN_SLP_SWITCH);
+      bool isUp = digitalRead(UP_SLP_SWITCH);
 
-   // read slope
-   bool isDown = digitalRead(DOWN_SLP_SWITCH);
-   bool isUp = digitalRead(UP_SLP_SWITCH);
+      // compute speed due to slope
+      if (isDown && isUp) { // error
+         return;
+      } else if (isUp) {  // decelerate
+         curr_speed -= 0.25 * 0.2;  // 0.25 m/s^2 * 0.2 s
+      } else if (isDown) {  // accelerate
+         curr_speed += 0.25 * 0.2;
+      }
 
-   // compute speed due to slope
-    if (isDown && isUp) { // error
-      return;
-   } else if (isUp) {  // decelerate
-      curr_speed -= 0.25 * 0.2;  // 0.25 m/s^2 * 0.2 s
-   } else if (isDown) {  // accelerate
-      curr_speed += 0.25 * 0.2;
+      // compute speed due to machine
+      if (isBrk) { curr_speed -= 0.5 * 0.2; }
+      if (isAcc) { curr_speed += 0.5 * 0.2; }
+
+   } else if (mode == 1) {
+      curr_speed = 0;
    }
-
-   // compute speed due to machine
-   if (isBrk) { curr_speed -= 0.5 * 0.2; }
-   if (isAcc) { curr_speed += 0.5 * 0.2; }
-
+   
    // LED
    analogWrite(SPD_LED, map(curr_speed, MIN_SPEED, MAX_SPEED, 0, 255));
 
@@ -189,72 +197,91 @@ void speed() {
 }
 
 
-void accelerator() {
+void accelerator(int mode = 0) {
+   /*
+   Two modes: 
+   - 0: normal mode
+   - 1: emergency mode (off)
+   */
 
-   // answer request
-   if (request_received && !requested_answered) {
-      if (0 == strcmp("GAS: SET\n", request)) {  // activate accelerator
+   if (mode == 0) {
+      // answer request
+      if (request_received && !requested_answered) {
+         if (0 == strcmp("GAS: SET\n", request)) {  // activate accelerator
 
-         isAcc = true;
+            isAcc = true;
+               
+            // display LEDs
+            digitalWrite(GAS_LED, HIGH);
+
+            // answer request
+            sprintf(answer, "GAS:  OK\n");
             
-         // display LEDs
-         digitalWrite(GAS_LED, HIGH);
+            // set request as answered
+            requested_answered = true;
 
-         // answer request
-         sprintf(answer, "GAS:  OK\n");
+         } else if (0 == strcmp("GAS: CLR\n", request)) {  // deactivate accelerator
          
-         // set request as answered
-         requested_answered = true;
+            isAcc = false;
 
-      } else if (0 == strcmp("GAS: CLR\n", request)) {  // deactivate accelerator
-      
-         isAcc = false;
+            // display LEDs
+            digitalWrite(GAS_LED, LOW);
 
-         // display LEDs
-         digitalWrite(GAS_LED, LOW);
+            // answer request
+            sprintf(answer, "GAS:  OK\n");
+            
+            // set request as answered
+            requested_answered = true;
 
-         // answer request
-         sprintf(answer, "GAS:  OK\n");
-         
-         // set request as answered
-         requested_answered = true;
-
+         }
       }
+   } else if (mode == 1) {
+      isAcc = false;
    }
 }
 
 
 void brake() {
-   // answer request
-   if (request_received && !requested_answered) {
-      if (0 == strcmp("BRK: SET\n", request)) {  // activate accelerator
+   /*
+   Two modes: 
+   - 0: normal mode
+   - 1: emergency mode (off)
+   */
 
-         isBrk = true;
+   if (mode == 0) {
+      // answer request
+      if (request_received && !requested_answered) {
+         if (0 == strcmp("BRK: SET\n", request)) {  // activate brake
+
+            isBrk = true;
+               
+            // display LEDs
+            digitalWrite(BRK_LED, HIGH);
+
+            // answer request
+            sprintf(answer, "BRK:  OK\n");
             
-         // display LEDs
-         digitalWrite(BRK_LED, HIGH);
+            // set request as answered
+            requested_answered = true;
 
-         // answer request
-         sprintf(answer, "BRK:  OK\n");
-         
-         // set request as answered
-         requested_answered = true;
-
-      } else if (0 == strcmp("BRK: CLR\n", request)) {  // deactivate accelerator
-         
-         isBrk = false;
+         } else if (0 == strcmp("BRK: CLR\n", request)) {  // deactivate brake
             
-         // display LEDs
-         digitalWrite(BRK_LED, LOW);
+            isBrk = false;
+               
+            // display LEDs
+            digitalWrite(BRK_LED, LOW);
 
-         // answer request
-         sprintf(answer, "BRK:  OK\n");
-         
-         // set request as answered
-         requested_answered = true;
+            // answer request
+            sprintf(answer, "BRK:  OK\n");
+            
+            // set request as answered
+            requested_answered = true;
 
 
+         }
       }
+   } else if (mode == 1) {
+      isBrk = false;
    }
 }
 
@@ -326,7 +353,7 @@ void light() {
 
       int level = map(analogRead(PHOTORESISTOR), MIN_LIT, MAX_LIT, 0, 99);
       // send the answer for light request
-      sprintf(answer, "LIT:%i%\n", level);
+      sprintf(answer, "LIT:%02d%%\n", level);
 
       // light_test();
 
@@ -335,31 +362,43 @@ void light() {
 }
 
 
-void lamp() {
-   if (request_received && !requested_answered) {
-      // light lamps
-      if (0 == strcmp("LAM: SET\n", request)) {
-         digitalWrite(LAM_LED, HIGH);
-         sprintf(answer, "LAM:  OK\n");
+void lamp(int mode = 0) {
+   /*
+   Two modes: 
+   - 0: normal mode
+   - 1: emergency mode (on)
+   */
+   if (mode == 0) {
+      if (request_received && !requested_answered) {
+         // light lamps
+         if (0 == strcmp("LAM: SET\n", request)) {
+            digitalWrite(LAM_LED, HIGH);
+            sprintf(answer, "LAM:  OK\n");
+
+            requested_answered = true;
+         }
+         // clear lamps
+         else if (0 == strcmp("LAM: CLR\n", request)) {
+            digitalWrite(LAM_LED, LOW);
+            sprintf(answer, "LAM:  OK\n");
+
+            requested_answered = true;
+         }
 
       }
-      // clear lamps
-      else if (0 == strcmp("LAM: CLR\n", request)) {
-         digitalWrite(LAM_LED, LOW);
-         sprintf(answer, "LAM:  OK\n");
-      }
-
-      requested_answered = true;
+   } else if (mode == 1) {
+      digitalWrite(LAM_LED, HIGH);
+      
    }
 }
 
 
 void distance_select() {
-   curr_distance = map(value, MIN_POT, MAX_POT, MIN_DISTANCE, MAX_DISTANCE);
+   curr_distance = map(analogRead(POTENTIOMETER), MIN_POT, MAX_POT, MIN_DISTANCE, MAX_DISTANCE);
 }
 
 
-void distance_display(int mode) {
+void distance_display(int mode = 0) {
    /* 
    This function has two modes:
    - mode 0: distance selection mode
@@ -375,6 +414,7 @@ void distance_display(int mode) {
       // check if it's near the stop (if going to stop in 2 cycles)
       if ((curr_distance - (curr_speed * 2 * 0.2) <= 0) || (curr_distance == 0)) {
          curr_distance = 0;
+         curr_speed = 0;
       } else { // update the distance
          curr_distance -= curr_speed * 0.2;  // m/s * s
       }
@@ -393,7 +433,7 @@ void distance_display(int mode) {
    if (request_received && !requested_answered && 
       (0 == strcmp("DS:  REQ\n", request))) {
       
-      sprintf(answer, "DS:%05d%\n", curr_distance);
+      sprintf(answer, "DS:%05d\n", curr_distance);
       
       requested_answered = true;
    }
@@ -477,11 +517,24 @@ int distance_scheduler() {
          light();
          lamp();
          distance_select();
-         distance_display(0);
+         distance_display();
          if (distance_validate() == 1){
-            return;
+            unsigned long end = millis();
+
+            // sleep for the rest of the cycle
+            if (sc_time < elapsed) {  // sth went wrong
+               sprintf(answer, "MSG: ERR\n");
+               break;
+            } else if ((sc_time - elapsed) < 10) {  // more accurate to use miliseconds
+                  delayMicroseconds((sc_time - elapsed) * 1000);
+            } else {
+               delay(sc_time - elapsed);
+            }
+
+            // change mode
+            return 0;
          }
-         movement_go();
+         movement_stop();
 
          if (emergency() == 1) { return 1; }
 
@@ -540,6 +593,7 @@ int approaching_scheduler() {
 
          // check if stopped
          if ((curr_distance == 0) && (curr_speed <= 10)) {
+            // change mode
             return 0;
          }
 
@@ -592,12 +646,25 @@ int stop_scheduler() {
          accelerator();
          brake();
          mixer();
-         speed();
+         speed(1);
          slope();
          light();
          lamp();
          if (distance_validate() == 1){
-            return;
+            unsigned long end = millis();
+
+            // sleep for the rest of the cycle
+            if (sc_time < elapsed) {  // sth went wrong
+               sprintf(answer, "MSG: ERR\n");
+               break;
+            } else if ((sc_time - elapsed) < 10) {  // more accurate to use miliseconds
+                  delayMicroseconds((sc_time - elapsed) * 1000);
+            } else {
+               delay(sc_time - elapsed);
+            }
+
+            // change mode
+            return 0;
          }
 
          if (emergency() == 1) { return 1; }
@@ -648,22 +715,15 @@ void emergency_scheduler() {
       switch (sc) {
       case 0:
          comm_server();
-         accelerator();
-         // TODO: modify modes
-         brake();
+         accelerator(1);
+         brake(1);
          mixer();
-         speed();
+         speed(1);
          slope();
          light();
-         lamp();
+         lamp(1);
          distance_select();
          distance_display(0);
-         if (distance_validate() == 1){
-            return;
-         }
-         movement_go();
-
-         if (emergency() == 1) { return 1; }
 
          break;
       }
@@ -717,11 +777,20 @@ void serial_test() {
    slope();
    brake();
    mixer();
+   light();
+   lamp();
+   distance_select();
+   distance_display();
+   distance_validate();
+   movement_go();
   
   
    Serial.print(request_received);
    Serial.print(requested_answered);
-   Serial.print("\n");   
+   Serial.print("\n");
+
+   delay(1000);
+
 }
 
 
@@ -1053,6 +1122,7 @@ void setup() {
    pinMode(BRK_LED, OUTPUT);
    pinMode(MIX_LED, OUTPUT);
    pinMode(SPD_LED, OUTPUT);
+   pinMode(LAM_LED, OUTPUT);
    
    pinMode(DOWN_SLP_SWITCH, INPUT);
    pinMode(UP_SLP_SWITCH, INPUT);

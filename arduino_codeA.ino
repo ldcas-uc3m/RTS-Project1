@@ -9,7 +9,7 @@
 // Global Constants
 // --------------------------------------
 #define SLAVE_ADDR 0x8
-#define MESSAGE_SIZE 8
+#define MESSAGE_SIZE 9
 // #define MESSAGE_SIZE 7
 #define MAX_MILLIS 0xFFFFFFFF  // max number for the millis() clock function
 #define MIN_SPEED 40
@@ -65,6 +65,7 @@ int comm_server() {
          Serial.print(answer);
       } else {
          Serial.print("MSG: ERR\n");
+         requested_answered = true;
       }  
       // reset flags and buffers
       request_received = false;
