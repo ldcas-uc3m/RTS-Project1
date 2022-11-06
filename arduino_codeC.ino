@@ -135,7 +135,7 @@ void comm_server() {
       // if the last character is an enter or
       // there are 9th characters set an enter and finish.
       if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
-         // if ((request[count] == '\n') || (count == MESSAGE_SIZE - 1)) {
+      // if ((request[count] == '\n') || (count == MESSAGE_SIZE - 1)) {
          request[count] = '\n';
          // request[count + 1] = '\n';
          count = 0;
