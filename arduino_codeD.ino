@@ -239,7 +239,7 @@ void accelerator(int mode = 0) {
       }
    } else if (mode == 1) {
       isAcc = false;
-      digitalWrite(GAS_LED, HIGH);
+      digitalWrite(GAS_LED, LOW);
 
    }
 }
