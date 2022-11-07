@@ -364,3 +364,19 @@ For implementation in [Tinkercad](https://www.tinkercad.com/), set `MESSAGE_SIZE
 
 
 ### Software module
+
+
+
+## Execution
+
+### Hardware module
+1. Setup the circuit on an Arduino UNO as in the [previous image](#hardware-module)
+2. Download the [Arduino IDE](https://www.arduino.cc/en/software)
+3. Open the `arduino_code/arduino_code.ino` file in Arduino IDE
+4. Plug in the microcontroller
+5. Run the code
+
+You can see the execution online in [Tinkercad](https://www.tinkercad.com/things/kMd5OFdTTyr?sharecode=0-_kDrg5C7xgWkJY8IQwxa2eKNZPFR-1j0ds98lbFmw).
+
+
+### Software module
