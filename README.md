@@ -316,7 +316,7 @@ The main control system should implement the emergency mode, executing the follo
 The functions to access the display of the main control server are the following:  
 
 |    COMPONENT    |             FUNCTION             | COMPUTING TIME |
-|:---------------:|:--------------------------------:|:--------------:|
+| --------------- | -------------------------------- | -------------- |
 | Slope           | `displaySlope(int slope)`        |   0.5 seconds  |
 | Speed meter     | `displaySpeed(double speed)`     |   0.5 seconds  |
 | Accelerator     | `displayGas(int gas)`            |   0.5 seconds  |
@@ -339,6 +339,28 @@ We implemented this project using an Arduino UNO microcontroller for the hardwar
 
 ![arduino](img/arduino.png)
 
+The pinout is:  
+
+|     COMPONENT     | PIN |
+| ----------------- | --- |
+| `GAS_LED`         | D13 |
+| `BRK_LED`         | D12 |
+| `MIX_LED`         | D11 |
+| `SPD_LED`         | D10 |
+| `LAM_LED`         | D7  |
+| `DOWN_SLP_SWITCH` | D9  |
+| `UP_SLP_SWITCH`   | D8  |
+| `STP_BUTTON`      | D6  |
+| `DISP_A`          | D2  |
+| `DISP_B`          | D3  |
+| `DISP_C`          | D4  |
+| `DISP_D`          | D5  |
+| `PHOTORESISTOR`   | A0  |
+| `POTENTIOMETER`   | A1  |
+
+<!-- Thanks to https://www.tablesgenerator.com/markdown_tables -->
+
 For implementation in [Tinkercad](https://www.tinkercad.com/), set `MESSAGE_SIZE` to `7`, and replace the commented lines by the uncommented ones above them in `comm_server`.
+
 
 ### Software module

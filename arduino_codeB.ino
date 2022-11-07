@@ -36,14 +36,14 @@
 #define PHOTORESISTOR 0
 
 // minimum and maximum light levels for the photoresistor
-#define MIN_LIT 54
-#define MAX_LIT 974
+#define MIN_LIT 0
+#define MAX_LIT 1000
 
 
 // --------------------------------------
 // Global Variables
 // --------------------------------------
-double curr_speed = 55.5;
+double curr_speed = 0;
 bool isAcc = false;
 bool isBrk = false;
 bool isMix = false;
@@ -99,8 +99,7 @@ int comm_server() {
       
       // if the last character is an enter or
       // there are 9th characters set an enter and finish.
-      if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
-      // if ((request[count] == '\n') || (count == MESSAGE_SIZE - 1)) {
+      if ((request[count] == '\n') || (count == MESSAGE_SIZE - 1)) {
          request[count] = '\n';
          // request[count + 1] = '\n';
          count = 0;
@@ -273,7 +272,7 @@ void slope() {
 
       // answer request
       if (!isDown && !isUp) {
-         sprintf(answer, "SLP:  FLAT\n");
+         sprintf(answer, "SLP:FLAT\n");
       } else if (isDown && isUp) {  // error
          sprintf(answer, "MSG: ERR\n");
       } else if (isUp) {
