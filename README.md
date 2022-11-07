@@ -36,7 +36,7 @@ The objective is to activate the lamps as soon as entering on a dark zone. At th
 There is the inclusion of concrete deposits where to unload part of the concrete. The wagon should detect the proximity of the deposit and should reduce its speed until stopping under the deposit. After that it should wait until the download is finished and then it will resume its speed.
 
 
-#### 1.1 Sensors
+### 1.1 Sensors
 
 The components to control are:
 - Light sensor: Detect if the environment is dark enough to switch on the lamps or not.
@@ -45,7 +45,7 @@ The components to control are:
 - A sensor placed on the deposit is included to indicate when the download process is over. 
 
 
-#### 1.2 Execution modes
+### 1.2 Execution modes
 
 The system should execute normally until the distance to the deposit is been reduced to the minimum acceptable. In this moment the execution mode should be changed to start the braking mode. This process includes changes compared to the normal mode:
 - The process of adjusting the speed should double its frequency to ease the braking precision.
@@ -360,7 +360,7 @@ The pinout is:
 
 <!-- Thanks to https://www.tablesgenerator.com/markdown_tables -->
 
-For implementation in [Tinkercad](https://www.tinkercad.com/), set `MESSAGE_SIZE` to `7`, and replace the commented lines by the uncommented ones above them in `comm_server`.
+For implementation in [Tinkercad](https://www.tinkercad.com/), set `MESSAGE_SIZE` to `7`, and replace the commented lines by the uncommented ones above them in `comm_server()`.
 
 
 ### Software module
