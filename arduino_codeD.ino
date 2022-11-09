@@ -404,7 +404,7 @@ void distance_select() {
 void distance_display(int mode = 0) {
    /* 
    This function has two modes:
-   - mode 0: distance selection mode
+   - mode 0: normal selection mode
    - mode 1: approaching mode
    */
 
@@ -521,6 +521,7 @@ int distance_scheduler() {
          lamp();
          distance_select();
          distance_display();
+         movement_stop();
          if (distance_validate() == 1){
             unsigned long end = millis();
 
@@ -537,7 +538,6 @@ int distance_scheduler() {
             // change mode
             return 0;
          }
-         movement_stop();
 
          if (emergency() == 1) { return 1; }
 
@@ -653,6 +653,9 @@ int stop_scheduler() {
          slope();
          light();
          lamp();
+         distance_display();
+         movement_stop();
+
          if (distance_validate() == 1){
             unsigned long end = millis();
 
@@ -672,7 +675,6 @@ int stop_scheduler() {
 
          if (emergency() == 1) { return 1; }
 
-         movement_stop();
 
          break;
       }
