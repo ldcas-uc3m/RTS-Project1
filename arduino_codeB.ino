@@ -294,7 +294,7 @@ void light() {
 
       int level = map(analogRead(PHOTORESISTOR), MIN_LIT, MAX_LIT, 0, 99);
       // send the answer for light request
-      sprintf(answer, "LIT:%02d%%\n", level);
+      sprintf(answer, "LIT: %02d%%\n", level);
 
       // light_test();
 
