@@ -402,6 +402,9 @@ int task_lamp(){
 //-------------------------------------
 void *controller(void *arg)
 {
+
+        sleep(3);
+
 	int sc = 0;
 	//int sc_time = 10;
 	int num_sc = 3;

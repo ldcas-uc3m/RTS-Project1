@@ -609,7 +609,7 @@ void stop_scheduler(){
 void *controller(void *arg)
 {
 
-
+        sleep(3);
 	struct timespec start;
 	struct timespec end;
 
