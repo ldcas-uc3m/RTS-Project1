@@ -21,8 +21,7 @@
 #define MIN_DISTANCE 10000
 #define MAX_DISTANCE 90000
 
-#define COMP_TEST_ITERATIONS 10  // note: make it an even number
-#define NUM_TASKS 8
+#define COMP_TEST_ITERATIONS 40  // note: make it an even number
 
 // --------------------------------------
 // PINOUT
@@ -984,7 +983,7 @@ void task_test() {
          
          request[count] = car_aux;
          
-         if ((request[count] == '\n') || (count == MESSAGE_SIZE)) {
+         if ((request[count] == '\n') || (count == MESSAGE_SIZE - 1)) {
             request[count] = '\n';
             // request[count + 1] = '\n';
             count = 0;
@@ -1018,142 +1017,143 @@ void task_test() {
          Serial.println(stop_time - start_time);
       }
 
-      /*-- lamp - SET --*/ 
-      Serial.print("Lamp:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
-         // setup test
-         request_received = true;
-         requested_answered = false;
-         char request[] = "LAM: SET\n";
-
-         // run test
-         unsigned long start_time = micros();
-         lamp(0);  // worst-case is mode 0
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-      
-      /*-- lamp - CLR --*/ 
-      for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
-         // setup test
-         request_received = true;
-         requested_answered = false;
-         char request[] = "LAM: CLR\n";
-
-         // run test
-         unsigned long start_time = micros();
-         lamp(0);  // worst-case is mode 0
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-
-      /*-- distance_select --*/
-      Serial.print("distance_select:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
-
-         // run test
-         unsigned long start_time = micros();
-         distance_select();
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-      
-      /*-- distance_display --*/
-      Serial.print("distance_display:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
-         // setup test
-         request_received = true;
-         requested_answered = false;
-         char request[] = "DS:  REQ\n";
-
-         // run test
-         unsigned long start_time = micros();
-         distance_display(1);  // worst-case is mode 1
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-      
-      /*-- distance_validate --*/
-      Serial.print("distance_validate:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
-
-         // run test
-         unsigned long start_time = micros();
-         distance_validate();
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-
-      /*-- movement_go --*/
-      Serial.print("movement_go:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
-         // setup test
-         request_received = true;
-         requested_answered = false;
-         char request[] = "STP: REQ\n";
-
-         // run test
-         unsigned long start_time = micros();
-         movement_go();  // worst-case is mode 1
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-      
-      /*-- movement_stop --*/
-      Serial.print("movement_stop:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
-         // setup test
-         request_received = true;
-         requested_answered = false;
-         char request[] = "STP: REQ\n";
-
-         // run test
-         unsigned long start_time = micros();
-         movement_stop();  // worst-case is mode 1
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
-      
-      /*-- emergency --*/
-      Serial.print("emergency:\n");
-
-      for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
-         // setup test
-         request_received = true;
-         requested_answered = false;
-         char request[] = "ERR: SET\n";
-
-         // run test
-         unsigned long start_time = micros();
-         emergency();
-         unsigned long stop_time = micros();
-
-         // print results
-         Serial.println(stop_time - start_time);
-      }
    }
 
-   delay(10000);
+   /*-- lamp - SET --*/ 
+   Serial.print("Lamp:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "LAM: SET\n";
+
+      // run test
+      unsigned long start_time = micros();
+      lamp(0);  // worst-case is mode 0
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   /*-- lamp - CLR --*/ 
+   for (int i = 0; i < COMP_TEST_ITERATIONS / 2; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "LAM: CLR\n";
+
+      // run test
+      unsigned long start_time = micros();
+      lamp(0);  // worst-case is mode 0
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+
+   /*-- distance_select --*/
+   Serial.print("distance_select:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+
+      // run test
+      unsigned long start_time = micros();
+      distance_select();
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   /*-- distance_display --*/
+   Serial.print("distance_display:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "DS:  REQ\n";
+
+      // run test
+      unsigned long start_time = micros();
+      distance_display(1);  // worst-case is mode 1
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   /*-- distance_validate --*/
+   Serial.print("distance_validate:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+
+      // run test
+      unsigned long start_time = micros();
+      distance_validate();
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+
+   /*-- movement_go --*/
+   Serial.print("movement_go:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "STP: REQ\n";
+
+      // run test
+      unsigned long start_time = micros();
+      movement_go();  // worst-case is mode 1
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   /*-- movement_stop --*/
+   Serial.print("movement_stop:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "STP: REQ\n";
+
+      // run test
+      unsigned long start_time = micros();
+      movement_stop();  // worst-case is mode 1
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+   
+   /*-- emergency --*/
+   Serial.print("emergency:\n");
+
+   for (int i = 0; i < COMP_TEST_ITERATIONS; i++) {
+      // setup test
+      request_received = true;
+      requested_answered = false;
+      char request[] = "ERR: SET\n";
+
+      // run test
+      unsigned long start_time = micros();
+      emergency();
+      unsigned long stop_time = micros();
+
+      // print results
+      Serial.println(stop_time - start_time);
+   }
+
+   delay(20000);
 }
 
 
@@ -1221,5 +1221,7 @@ void loop() {
       // Serial.print("Emergency mode\n");
       emergency_scheduler();
    }
+
+   task_test();
    
 }
