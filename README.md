@@ -364,7 +364,8 @@ For implementation in [Tinkercad](https://www.tinkercad.com/), set `MESSAGE_SIZE
 
 
 ### Software module
-
+This will use RTEMS OS on an i386 architecture.
+<!-- TODO: expand this shit -->
 
 
 ## Execution
@@ -380,3 +381,54 @@ You can see the execution online in [Tinkercad](https://www.tinkercad.com/things
 
 
 ### Software module
+<!-- TODO: Double check this -->
+We will use Eclipse IDE and Quemu (on Ubuntu 22.4 LTS) in order to simulate the desired architecture.
+
+First we need to setup the enviroment and compile the project.
+
+1. First The Eclipse IDE needs to be installed by executing the following:
+```
+sudo apt update
+sudo apt install snapd default-jre
+sudo snap install --classic eclipse
+```
+2. Start the eclipse program.
+3. Install the following eclipse plugins.  
+You need to go to `Help` => `Install new Software...`.  
+In the drop down list `Work with` you should select `2019-12 - http://download.eclipse.org/releases/2019-12`. The plugins to install are the following (Use the search bar to find them):
+    - C/C++ Autotools support.
+    - C/C++ Development Tools.
+    - C/C++ GCC Cross Compiler Support.
+4. Create a new Cross-compiler C++ project selecting `File` => `New` => `C/C++ Project` and perform the following steps:
+    1. Select `C Managed Build`, then `Next`.
+    2. Name the project `test_i386`. Also select `Executable` => `Empty Project` and `Cross GCC` then `Next`.
+    3. Select both `Debug` and `Release` then `Next`.
+    4. Write `i386-rtems5-` inside the `Cross compiler prefix` box. Then select the path `${HOME}/rtems-dev/compiler/arm/5/bin` in the `Cross compiler path` box using the `Browse` button. Finally, press `Finish`.
+5. Open the secondary menu of the project (mouse right click) and select `Properties`.
+6. Open `C/C++ Build` => `Settings`, then do the following:
+    1. Select `Cross GCC Compiler` => `Miscellaneous` then add **at the end** of `Other flags`:  
+    ```
+    -B${HOME}/rtems-dev/rtems-lib/i386/5/i386-rtems5/pc386/lib -specs bsp_specs
+    ```
+    2. Select `Cross GCC Linker` => `Miscellaneous` then add at `Linker flags`:  
+    ```
+    -B${HOME}/rtems-dev/rtems-lib/i386/5/i386-rtems5/pc386/lib -specs bsp_specs -qrtems -Wl,-Ttext,0x00100000
+    ```
+    3. Press `Apply and Close`.
+7. Open the secondary menu of the project (mouse right click) and select `Import`. Then select `General` => `File System`.
+8. Browse the `rtems/` directory of the project and select all .c and .h files. Then press `Finish`.
+9. Open the secondary menu of the project (mouse right click) and select `Build Project`. The project will compile and the program will be generated.
+
+Now we can execute the program.
+1. Install the qemu virtual machine for i386.  
+```
+sudo apt install qemu-system
+```
+2. Press the `External tools` button and select `External Tools Configuration...`.
+3. Select `Program` and press `New launch configuration`.
+4. On each box write down the following, then press `Run`:
+    - `Name`: `Qemu Debug`
+    - `Location`: `/usr/bin/qemu-system-i386`
+    - `Working Directory`: `${project_loc}/Debug`
+    - `Arguments`: `-kernel ${project_loc}/Debug/${project_name}`
+5. Press the `External tools` button to run again the program
