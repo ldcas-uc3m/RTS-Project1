@@ -407,7 +407,7 @@ void *controller(void *arg)
 
 	int sc = 0;
 	//int sc_time = 10;
-	int num_sc = 3;
+	int num_sc = 6;
 
 	struct timespec sc_time;
 	sc_time.tv_nsec = 0;
@@ -438,6 +438,25 @@ void *controller(void *arg)
 				task_lamp();
 				task_speed();
 				task_accelerator();
+				break;
+            case 3:
+				task_light();
+				task_lamp();
+				task_slope();
+				task_brake();
+                task_mixer();
+				break;
+            case 4:
+				task_light();
+				task_lamp();
+				task_speed();
+				task_accelerator();
+				break;
+            case 5:
+				task_light();
+				task_lamp();
+				task_slope();
+				task_brake();
 				break;
 		}
 
