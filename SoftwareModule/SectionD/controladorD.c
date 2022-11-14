@@ -646,7 +646,7 @@ void stop_scheduler(){
 	}
 }
 void emergency_scheduler(){
-	num_sc = 3;
+	num_sc = 6;
 	sc_time.tv_sec=5;
 	switch (sc) {
 	case 0:
@@ -668,7 +668,25 @@ void emergency_scheduler(){
 		task_accelerator_off();
 		task_mixer();
 		break;
-
+	case 3:
+		task_lamp_on();
+		task_slope();
+		task_brake_on();
+		task_emergency();
+		break;
+	case 4:
+		task_lamp_on();
+		task_speed();
+		task_distance();
+		task_accelerator_off();
+		break;
+	case 5:
+		task_lamp_on();
+		task_slope();
+		task_brake_on();
+		task_emergency();
+		task_mixer();
+		break;
 	}
 }
 
